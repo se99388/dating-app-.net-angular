@@ -1,4 +1,5 @@
 using API.Data;
+using API.Helpers;
 using API.Interfaces;
 using API.Middleware;
 using API.Services;
@@ -18,7 +19,15 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 builder.Services.AddCors();
 builder.Services.AddScoped<ITokenService, TokenService>();
+
+//register PhotoService for dependency injection
+builder.Services.AddScoped<IPhotoService, PhotoService>();
+
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+
+//bind CloudinarySettings class to CloudinarySettings section in appsettings.json for photo upload settings
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     var tokenKey = builder.Configuration["TokenKey"] ?? throw new Exception("Token key not configured - Program.cs");

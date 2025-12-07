@@ -44,7 +44,7 @@ export class Register {
     });
   }
 
-
+  // Custom validator to match two form controls
   matchValues(matchTo: string): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
       const parent = control.parent;

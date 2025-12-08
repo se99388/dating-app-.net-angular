@@ -25,6 +25,8 @@ builder.Services.AddScoped<IPhotoService, PhotoService>();
 
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 
+builder.Services.AddScoped<LogUserActivity>();
+
 //bind CloudinarySettings class to CloudinarySettings section in appsettings.json for photo upload settings
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 

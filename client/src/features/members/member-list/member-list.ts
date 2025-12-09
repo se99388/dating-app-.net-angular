@@ -17,7 +17,6 @@ export class MemberList implements OnInit {
 
   private memberService = inject(MemberService);
   protected paginatedMembers = signal<PaginatedResult<Member> | null>(null);
-  protected showModal = signal(false);
 
   protected memberParams = new MemberParams();
 
@@ -45,12 +44,11 @@ export class MemberList implements OnInit {
   }
 
   openModal() {
-    this.showModal.set(true);
+    this.modal.open()
   }
 
   onClose() {
     console.log('Modal closed');
-    this.showModal.set(false);
   }
 
   onFilterChange(data: MemberParams) {

@@ -29,6 +29,12 @@ export const loadingInterceptor: HttpInterceptorFn = (req, next) => {
     invalidateCache('likes');
   }
 
+  //should be change later
+  if (req.method === 'POST') {
+    console.log('Clearing entire cache on logout', req.url);
+    cache.clear();
+  }
+
   if (req.method === 'GET') {
     const cachedResponse = cache.get(cacheKey);
     if (cachedResponse) return of(cachedResponse);

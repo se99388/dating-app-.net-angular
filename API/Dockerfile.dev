@@ -1,0 +1,20 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0
+
+WORKDIR /app
+
+# Copy csproj and restore dependencies
+COPY *.csproj ./
+RUN dotnet restore
+
+# Copy everything else
+COPY . ./
+
+# Install dotnet-ef tool for migrations
+RUN dotnet tool install --global dotnet-ef --version 9.0.0
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+# Expose port
+EXPOSE 5000
+
+# Run with dotnet watch for hot reload
+CMD ["dotnet", "watch", "run", "--no-launch-profile"]

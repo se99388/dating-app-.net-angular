@@ -30,7 +30,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.local
     container_name: datingapp
     environment:
       - ASPNETCORE_ENVIRONMENT=Production

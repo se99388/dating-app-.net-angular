@@ -26,6 +26,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5000
       - ConnectionStrings__DefaultConnection=Server=sql,1433;Database=datingdb;User Id=sa;Password=Password@1;TrustServerCertificate=True
+      - CloudinarySettings__CloudName=doncxe4pw
+      - CloudinarySettings__ApiKey=795235291641218
+      - CloudinarySettings__ApiSecret=rcQf35mAVk0D6Yph_o5_u7Y_dss
     ports:
       - "5000:5000"
     volumes:

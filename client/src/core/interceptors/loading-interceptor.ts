@@ -35,9 +35,10 @@ export const loadingInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   //should be change later
-  if (req.method === 'POST') {
+  if (req.method === 'POST' && (!(req.url.includes('refresh-token')) || req.url.includes('logout'))) {
     cache.clear();
   }
+
 
   if (req.method === 'GET') {
     const cachedResponse = cache.get(cacheKey);

@@ -34,7 +34,7 @@ export class LikesService {
     });
   }
 
-  clrearLikeIds() {
+  clearLikeIds() {
     this.likeIds.set([]);
   }
 }

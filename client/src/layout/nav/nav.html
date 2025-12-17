@@ -17,6 +17,7 @@
             <a routerLink="/members" routerLinkActive="text-accent" [routerLinkActiveOptions]="{exact:true}">Matches</a>
             <a routerLink="/lists" routerLinkActive="text-accent">Lists</a>
             <a routerLink="/messages" routerLinkActive="text-accent">Messages</a>
+            <a *appHasRole="['Admin','Moderator']" routerLink="/admin" routerLinkActive="text-accent">Admin</a>
             }
             <a routerLink="/errors" routerLinkActive="text-accent">Erros</a>
 
@@ -56,7 +57,10 @@
             <form #loginForm="ngForm" (ngSubmit)="login()" class="flex items-center gap-3">
                 <input [(ngModel)]="creds.email" name="email" type="text" class="input" placeholder="Email" />
                 <input [(ngModel)]="creds.password" name="password" type="text" class="input" placeholder="Password" />
-                <button class="btn btn-primary" type="submit">Login</button>
+                <button class="btn btn-primary" type="submit">
+                    @if(loading()){
+                    <span class="loading loading-spinner mr-2"></span>}
+                    Login</button>
             </form>
             }
         </div>

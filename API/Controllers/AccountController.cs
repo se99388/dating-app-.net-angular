@@ -6,29 +6,25 @@ using API.DTOs;
 using API.Entities;
 using API.Extentions;
 using API.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers;
 
-public class AccountController(AppDbContext context, ITokenService tokenService) : BaseApiController
+public class AccountController(UserManager<AppUser> userManager, ITokenService tokenService) : BaseApiController
 {
 
     [HttpPost("register")]//api/account/register
     public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
     {
 
-        if (await EmailExists(registerDto.Email)) return BadRequest("Email is already taken");
-
-
-        using var hmac = new HMACSHA512(); //salting the password
-
         var user = new AppUser
         {
             DisplayName = registerDto.DisplayName,
             Email = registerDto.Email,
-            PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password)),
-            PasswordSalt = hmac.Key,
+            UserName = registerDto.Email,
             Member = new Member
             {
                 DisplayName = registerDto.DisplayName,
@@ -39,31 +35,96 @@ public class AccountController(AppDbContext context, ITokenService tokenService)
             }
         };
 
-        context.Users.Add(user);
+        var result = await userManager.CreateAsync(user, registerDto.Password);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError("Identity", error.Description);
+            }
+            return ValidationProblem();
+        }
 
-        await context.SaveChangesAsync();
-        return user.ToDto(tokenService);
+        await userManager.AddToRoleAsync(user, "Member");
+
+        await SetRefreshToken(user);
+
+        return await user.ToDto(tokenService);
     }
 
     [HttpPost("login")]
     public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
     {
-        var user = await context.Users
-            .SingleOrDefaultAsync(x => x.Email == loginDto.Email);
+        var user = await userManager.FindByEmailAsync(loginDto.Email);
 
         if (user == null) return Unauthorized("Invalid email");
 
-        using var hmac = new HMACSHA512(user.PasswordSalt);
-        var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
-        for (int i = 0; i < computedHash.Length; i++)
-        {
-            if (computedHash[i] != user.PasswordHash[i]) return Unauthorized("Invalid password");
-        }
-        return user.ToDto(tokenService);
+        var result = await userManager.CheckPasswordAsync(user, loginDto.Password);
+
+        if (!result) return Unauthorized("Invalid password");
+
+        await SetRefreshToken(user);
+
+        return await user.ToDto(tokenService);
     }
 
-    private async Task<bool> EmailExists(string email)
+
+    [HttpPost("refresh-token")]
+    // if the refresh token is valid, extend refresh token expiry time
+    public async Task<ActionResult<UserDto>> RefreshToken()
     {
-        return await context.Users.AnyAsync(x => x.Email.ToLower() == email.ToLower());
+        var refreshToken = Request.Cookies["refreshToken"];
+
+        if (refreshToken == null)
+        {
+            return NoContent();
+        }
+
+        var user = await userManager.Users
+            .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken && u.RefreshTokenExpiryTime > DateTime.UtcNow);
+
+        if (user == null)
+        {
+            return Unauthorized("Invalid or expired refresh token");
+        }
+
+        await SetRefreshToken(user);
+
+        return await user.ToDto(tokenService);
     }
+
+    private async Task SetRefreshToken(AppUser user)
+    {
+        var refreshToken = tokenService.GenerateRefreshToken();
+
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+        await userManager.UpdateAsync(user);
+
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,//https only
+            SameSite = SameSiteMode.Strict,
+            Expires = user.RefreshTokenExpiryTime
+        };
+
+        Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+    }
+
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<ActionResult> Logout()
+    {
+        await userManager.Users.Where(u => u.Id == User.GetMemberId())
+        .ExecuteUpdateAsync(setters => setters
+        .SetProperty(u => u.RefreshToken, _ => null)
+        .SetProperty(u => u.RefreshTokenExpiryTime, _ => null)
+        );
+
+        Response.Cookies.Delete("refreshToken");
+        return Ok();
+    }
+
 }

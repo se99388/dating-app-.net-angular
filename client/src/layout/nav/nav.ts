@@ -5,10 +5,11 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ToastService } from '../../core/services/toast-service';
 import { themes } from '../theme';
 import { BusySerivce } from '../../core/services/busy-serivce';
+import { HasRole } from '../../shared/directives/has-role';
 
 @Component({
   selector: 'app-nav',
-  imports: [FormsModule, RouterLink, RouterLinkActive],
+  imports: [FormsModule, RouterLink, RouterLinkActive, HasRole],
   templateUrl: './nav.html',
   styleUrl: './nav.css',
 })
@@ -20,7 +21,7 @@ export class Nav implements OnInit {
   protected creds: any = {}
   protected selectedTheme = signal<string>(localStorage.getItem('theme') || 'light');
   protected themes = themes;
-
+  protected loading = signal(false);
 
   ngOnInit(): void {
     document.documentElement.setAttribute('data-theme', this.selectedTheme());
@@ -35,6 +36,7 @@ export class Nav implements OnInit {
   }
 
   login() {
+    this.loading.set(true);
     this.accountService.login(this.creds).subscribe({
       next: response => {
         this.router.navigateByUrl('/members')
@@ -43,6 +45,9 @@ export class Nav implements OnInit {
       },
       error: error => {
         this.toast.error(error.error)
+      },
+      complete: () => {
+        this.loading.set(false);
       }
     });
   }

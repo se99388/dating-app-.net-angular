@@ -16,48 +16,47 @@ services:
       timeout: 3s
       retries: 10
       start_period: 10s
+  # api:
+  #   build:
+  #     context: ./API
+  #     dockerfile: Dockerfile.dev
+  #   container_name: datingapp-api
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - ASPNETCORE_URLS=http://+:5000
+  #     - ConnectionStrings__DefaultConnection=Server=sql,1433;Database=datingdb;User Id=sa;Password=Password@1;TrustServerCertificate=True
+  #     - CloudinarySettings__CloudName=doncxe4pw
+  #     - CloudinarySettings__ApiKey=795235291641218
+  #     - CloudinarySettings__ApiSecret=rcQf35mAVk0D6Yph_o5_u7Y_dss
+  #   ports:
+  #     - "5000:5000"
+  #   volumes:
+  #     - ./API:/app
+  #     - /app/bin
+  #     - /app/obj
+  #   depends_on:
+  #     sql:
+  #       condition: service_healthy
+  #   networks:
+  #     - datingapp-network
+  #   command: dotnet watch run --no-launch-profile
 
-  api:
-    build:
-      context: ./API
-      dockerfile: Dockerfile.dev
-    container_name: datingapp-api
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5000
-      - ConnectionStrings__DefaultConnection=Server=sql,1433;Database=datingdb;User Id=sa;Password=Password@1;TrustServerCertificate=True
-      - CloudinarySettings__CloudName=doncxe4pw
-      - CloudinarySettings__ApiKey=795235291641218
-      - CloudinarySettings__ApiSecret=rcQf35mAVk0D6Yph_o5_u7Y_dss
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./API:/app
-      - /app/bin
-      - /app/obj
-    depends_on:
-      sql:
-        condition: service_healthy
-    networks:
-      - datingapp-network
-    command: dotnet watch run --no-launch-profile
-
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile.dev
-    container_name: datingapp-client
-    ports:
-      - "4200:4200"
-    volumes:
-      - ./client:/app
-      - /app/node_modules
-      - /app/.angular
-    depends_on:
-      - api
-    networks:
-      - datingapp-network
-    command: ng serve --host 0.0.0.0 --poll 2000
+  # client:
+  #   build:
+  #     context: ./client
+  #     dockerfile: Dockerfile.dev
+  #   container_name: datingapp-client
+  #   ports:
+  #     - "4200:4200"
+  #   volumes:
+  #     - ./client:/app
+  #     - /app/node_modules
+  #     - /app/.angular
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - datingapp-network
+  #   command: ng serve --host 0.0.0.0 --poll 2000
 
 networks:
   datingapp-network:

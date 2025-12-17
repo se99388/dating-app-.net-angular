@@ -16,32 +16,67 @@ export class AccountService {
   private baseUrl = environment.apiUrl;
 
   register(creds: RegisterCreds) {
-    return this.http.post<User>(this.baseUrl + 'account/register', creds).pipe(tap(user => {
+    return this.http.post<User>(this.baseUrl + 'account/register', creds, { withCredentials: true }).pipe(tap(user => {
       if (user) {
         this.setCurrentUser(user);
+        this.startTokenRefreshInterval();
       }
     }))
   }
 
   login(creds: LoginCreds) {
-    return this.http.post<User>(this.baseUrl + 'account/login', creds).pipe(tap(user => {
+    return this.http.post<User>(this.baseUrl + 'account/login', creds, { withCredentials: true }).pipe(tap(user => {
       if (user) {
         this.setCurrentUser(user);
-
+        this.startTokenRefreshInterval();
       }
     }));
   }
 
   logout() {
-    this.currentUser.set(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('filters');
-    this.likesService.clrearLikeIds();
+    this.http.post(this.baseUrl + 'account/logout', {}, { withCredentials: true }).subscribe({
+      next: () => {
+        this.currentUser.set(null);
+        localStorage.removeItem('filters');
+        this.likesService.clearLikeIds();
+      },
+    });
+
+  }
+
+  refreshToken() {
+    return this.http.post<User>(this.baseUrl + 'account/refresh-token', {}, { withCredentials: true }).pipe(tap(user => {
+      if (user) {
+        this.setCurrentUser(user);
+      }
+    }));
+  }
+
+  startTokenRefreshInterval() {
+    setInterval(() => {
+      this.http.post<User>(this.baseUrl + 'account/refresh-token', {}, { withCredentials: true }).subscribe({
+        next: user => {
+
+          this.setCurrentUser(user);
+        },
+        error: error => {
+          this.logout();
+        }
+      });
+    }, 5 * 60 * 1000); // every 5 minutes
   }
 
   setCurrentUser(user: User) {
-    localStorage.setItem('user', JSON.stringify(user));
+    user.roles = this.getDecodedToken(user);
     this.currentUser.set(user);
     this.likesService.getLikeIds();
+  }
+
+  private getDecodedToken(user: User) {
+    const payload = user.token.split('.')[1];
+    const decoded = atob(payload);
+    const tokenData = JSON.parse(decoded);
+
+    return Array.isArray(tokenData.role) ? tokenData.role : [tokenData.role];
   }
 }
